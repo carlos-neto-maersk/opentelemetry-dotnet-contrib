@@ -35,19 +35,25 @@ internal sealed class HttpRequestRouteHelper
                 return template;
             }
 
+            // HashSet allows to filter duplicates (for different HTTP methods)
             HashSet<string> templates = new();
             foreach (var subRoute in subRoutes)
             {
                 _ = this.routeFetcher.TryFetch(subRoute, out var route);
                 _ = this.routeTemplateFetcher.TryFetch(route, out var subTemplate);
-                templates.Add(subTemplate);
+                if (subTemplate != null)
+                {
+                    templates.Add(subTemplate);
+                }
             }
 
+            // Different routes matched - path parameters are englobing several routes
             if (templates.Count > 1)
             {
                 return template;
             }
 
+            // To avoid linq, that instantiates a new enumerator instead of using hashset one as foreach
             foreach (var x in templates)
             {
                 template = x;
