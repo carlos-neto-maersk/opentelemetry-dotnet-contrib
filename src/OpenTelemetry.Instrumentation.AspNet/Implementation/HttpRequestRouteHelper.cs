@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using System;
+using System.Collections.Generic;
 using System.Web;
 using System.Web.Routing;
 
@@ -29,12 +30,28 @@ internal sealed class HttpRequestRouteHelper
         {
             // WebAPI attribute routing flows here. Use reflection to not take a dependency on microsoft.aspnet.webapi.core\[version]\lib\[framework]\System.Web.Http.
 
-            if (msSubRoutes is Array attributeRouting && attributeRouting.Length == 1)
+            if (msSubRoutes is not Array subRoutes)
             {
-                var subRouteData = attributeRouting.GetValue(0);
+                return template;
+            }
 
-                _ = this.routeFetcher.TryFetch(subRouteData, out var route);
-                _ = this.routeTemplateFetcher.TryFetch(route, out template);
+            HashSet<string> templates = new();
+            foreach (var subRoute in subRoutes)
+            {
+                _ = this.routeFetcher.TryFetch(subRoute, out var route);
+                _ = this.routeTemplateFetcher.TryFetch(route, out var subTemplate);
+                templates.Add(subTemplate);
+            }
+
+            if (templates.Count > 1)
+            {
+                return template;
+            }
+
+            foreach (var x in templates)
+            {
+                template = x;
+                break;
             }
         }
         else if (routeData.Route is Route route)
